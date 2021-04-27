@@ -2,18 +2,19 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
+	"net/http"
+	"orderservice/pkg/orderservice/transport"
+	"os"
 	"os/signal"
 	"syscall"
 )
 
-import (
-	"net/http"
-	"orderservice/transport"
-	"os"
-)
-
 func main() {
+	openDB()
+
 	log.SetFormatter(&log.JSONFormatter{})
 	file, err := os.OpenFile("my.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err == nil {
@@ -31,6 +32,18 @@ func main() {
 
 	waitForKillSignal(killSignalChan)
 	srv.Shutdown(context.Background())
+}
+
+func openDB() {
+	db, err := sql.Open("mysql", `orderservice:1234@/order_service`)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func startServer(serverUrl string) *http.Server {

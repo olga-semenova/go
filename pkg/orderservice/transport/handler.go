@@ -6,11 +6,17 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"net/http"
 )
 
 type kitty struct {
 	Name string `json:"n"`
+}
+type Order struct {
+	Name     string `json:"name"`
+	Id       string `json:"id"`
+	Quantity string `json:"quantity"`
 }
 
 func Router() http.Handler {
@@ -18,7 +24,25 @@ func Router() http.Handler {
 	s := r.PathPrefix("/api/v1").Subrouter()
 	s.HandleFunc("/hello-world", helloWorld).Methods(http.MethodGet)
 	s.HandleFunc("/get-kitty", getKitty).Methods(http.MethodGet)
-	return logMiddleWare(r)
+	s.HandleFunc("/order", createOrder).Methods(http.MethodPost)
+	return r
+}
+
+func createOrder(w http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+	var msg Order
+	err = json.Unmarshal(b, &msg)
+	if err != nil {
+	}
+
+	log.WithFields(log.Fields{
+		"method": r.Method,
+	}).Info("create order")
 }
 
 func helloWorld(w http.ResponseWriter, _ *http.Request) {
